@@ -1,0 +1,318 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .header {
+            background-color: #1e88e5;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        .balance-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #1e88e5;
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .balance-card button {
+            background-color: white;
+            color: #1e88e5;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .balance-card button:hover {
+            background-color: #f1f1f1;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        form input, form select, form button {
+            padding: 10px;
+            border: 1px solid #424242;
+            border-radius: 5px;
+            font-size: 1em;
+            background-color: #424242;
+            color: #e0e0e0;
+        }
+        form button {
+            background-color: #1e88e5;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        form button:hover {
+            background-color: #1565c0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #424242;
+        }
+        table th {
+            background-color: #1e88e5;
+            color: white;
+        }
+        table td {
+            background-color: #212121;
+        }
+        .revenue {
+            color: #43a047;
+            font-weight: bold;
+        }
+        .expense {
+            color: #e53935;
+            font-weight: bold;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .actions button.save {
+            background-color: #43a047;
+            color: white;
+        }
+        .actions button.upload {
+            background-color: #1e88e5;
+            color: white;
+        }
+        .actions button.clear {
+            background-color: #e53935;
+            color: white;
+        }
+        .actions button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Transaction Tracker</div>
+
+    <div class="container">
+        <div class="balance-card">
+            <div>Bank Balance: <span id="balance">₹0.00</span></div>
+            <button id="editBalance">Edit Balance</button>
+        </div>
+
+        <form id="expenseForm">
+            <input type="date" id="date" required>
+            <input type="text" id="description" placeholder="Description" required>
+            <input type="number" id="amount" placeholder="Amount (₹)" step="0.01" required>
+            <select id="type" required>
+                <option value="revenue">Revenue</option>
+                <option value="expense">Expense</option>
+            </select>
+            <button type="submit">Add Entry</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTableBody">
+            </tbody>
+        </table>
+
+        <div class="actions">
+            <button class="save" id="saveButton">Save to Local</button>
+            <button class="upload" id="uploadButton">Upload Data</button>
+            <button class="clear" id="clearTable">Clear All Entries</button>
+        </div>
+    </div>
+
+    <script>
+        let bankBalance = 0;
+        const balanceDisplay = document.getElementById('balance');
+        const form = document.getElementById('expenseForm');
+        const tableBody = document.getElementById('entriesTableBody');
+
+        function promptPassword(message, correctPassword) {
+            const input = prompt(message);
+            return input === correctPassword;
+        }
+
+        function displayBalance() {
+            balanceDisplay.textContent = `₹${bankBalance.toFixed(2)}`;
+        }
+
+        function updateBalance(amount, type) {
+            if (type === 'revenue') {
+                bankBalance += parseFloat(amount);
+            } else if (type === 'expense') {
+                bankBalance -= parseFloat(amount);
+            }
+            displayBalance();
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const date = document.getElementById('date').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value).toFixed(2);
+            const type = document.getElementById('type').value;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${date}</td>
+                <td>${description}</td>
+                <td class="${type}">₹${amount}</td>
+                <td>${type}</td>
+                <td><button class="delete-btn">Delete</button></td>
+            `;
+
+            tableBody.appendChild(row);
+            updateBalance(amount, type);
+
+            row.querySelector('.delete-btn').addEventListener('click', () => {
+                updateBalance(-amount, type);
+                row.remove();
+            });
+
+            form.reset();
+        });
+
+        document.getElementById('editBalance').addEventListener('click', () => {
+            if (promptPassword('Enter password to edit balance:', '2710')) {
+                const newBalance = parseFloat(prompt('Enter new bank balance:'));
+                if (!isNaN(newBalance)) {
+                    bankBalance = newBalance;
+                    displayBalance();
+                } else {
+                    alert('Invalid balance input.');
+                }
+            } else {
+                alert('Incorrect password!');
+            }
+        });
+
+        document.getElementById('saveButton').addEventListener('click', () => {
+            const data = {
+                bankBalance,
+                entries: []
+            };
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                data.entries.push({
+                    date: cells[0].textContent,
+                    description: cells[1].textContent,
+                    amount: cells[2].textContent.replace('₹', ''),
+                    type: cells[3].textContent
+                });
+            });
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transactions.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const data = JSON.parse(event.target.result);
+                        bankBalance = data.bankBalance || 0;
+                        displayBalance();
+
+                        tableBody.innerHTML = '';
+                        (data.entries || []).forEach(entry => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${entry.date}</td>
+                                <td>${entry.description}</td>
+                                <td class="${entry.type}">₹${parseFloat(entry.amount).toFixed(2)}</td>
+                                <td>${entry.type}</td>
+                                <td><button class="delete-btn">Delete</button></td>
+                            `;
+                            tableBody.appendChild(row);
+                            row.querySelector('.delete-btn').addEventListener('click', () => {
+                                updateBalance(-entry.amount, entry.type);
+                                row.remove();
+                            });
+                        });
+                    };
+                    reader.readAsText(file);
+                }
+            });
+            input.click();
+        });
+
+        document.getElementById('clearTable').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all entries?')) {
+                tableBody.innerHTML = '';
+                bankBalance = 0;
+                displayBalance();
+            }
+        });
+
+        // Initial password protection on load
+        window.onload = () => {
+            if (!promptPassword('Enter password to access the software:', '1998')) {
+                alert('Access denied!');
+                document.body.innerHTML = '<h1 style="color: red; text-align: center;">Access Denied</h1>';
+            }
+        };
+    </script>
+</body>
+</html>
